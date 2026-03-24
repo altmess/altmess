@@ -1,7 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN "email" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "password" TEXT NOT NULL DEFAULT '',
-ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
