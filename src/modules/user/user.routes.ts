@@ -86,13 +86,7 @@ export async function userRoutes(fastify: FastifyInstance) {
 				return reply.send(updatedUser);
 			} catch (error: any) {
 				fastify.log.error(error);
-				if (error.code === "P2002") {
-					return reply.code(409).send({
-						error: "User with this username already exists"
-					});
-				} else {
-					return reply.code(500).send({ error: "Internal server error" });
-				}
+				return reply.code(500).send({ error: "Internal server error" });
 			}
 		}
 	});
