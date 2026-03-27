@@ -1,0 +1,48 @@
+{
+	"name": "api",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "src/server.ts",
+	"directories": {
+		"test": "test"
+	},
+	"scripts": {
+		"test": "npm run build:ts && tsc -p test/tsconfig.json && c8 node --test -r ts-node/register \"test/**/*.ts\"",
+		"start": "node --env-file=../../.env dist/server.js",
+		"build": "npm run build:ts",
+		"build:ts": "tsc",
+		"watch:ts": "tsc -w",
+		"dev": "tsx watch --env-file=../../.env src/server.ts",
+		"dev:start": "tsx watch --env-file=../../.env src/server.ts",
+		"migrate": "prisma migrate dev",
+		"generate": "prisma generate"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"dotenv": "^16.4.5",
+		"@fastify/autoload": "^6.0.0",
+		"@fastify/jwt": "^10.0.0",
+		"@fastify/sensible": "^6.0.0",
+		"@fastify/websocket": "^11.2.0",
+		"@prisma/adapter-pg": "^7.5.0",
+		"@prisma/client": "^7.5.0",
+		"bcrypt": "^6.0.0",
+		"fastify": "^5.0.0",
+		"fastify-cli": "^7.4.1",
+		"fastify-plugin": "^5.0.0",
+		"pg": "^8.20.0",
+		"ws": "^8.20.0"
+	},
+	"devDependencies": {
+		"@types/bcrypt": "^6.0.0",
+		"@types/node": "^24.0.8",
+		"@types/ws": "^8.18.1",
+		"c8": "^10.1.2",
+		"fastify-tsconfig": "^3.0.0",
+		"prisma": "^7.5.0",
+		"tsx": "^4.19.3",
+		"typescript": "~5.9.2"
+	}
+}

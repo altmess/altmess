@@ -27,8 +27,14 @@ coverage
 build/Release
 
 # Dependency directories
-node_modules
-jspm_packages
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+.output/
+build/
 
 # Optional npm cache directory
 .npm
@@ -49,7 +55,8 @@ profile-*
 .idea
 
 # vscode
-.vscode
+.vscode/*
+!.vscode/extensions.json
 *code-workspace
 
 # clinic
@@ -61,7 +68,16 @@ profile*
 examples/typescript-server.js
 test/types/index.js
 
-# compiled app
-dist
-
+# .env files
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Turbo
+.turbo
+
+# Prisma migrations
+prisma/migrations/*
+!prisma/migrations/.gitkeep

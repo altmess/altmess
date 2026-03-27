@@ -26,8 +26,6 @@ export async function authRoutes(fastify: FastifyInstance) {
 					username: user.username
 				});
 
-				console.log({ token, user });
-
 				return reply.code(201).send({ token, user });
 			} catch (error: any) {
 				fastify.log.error(error);
