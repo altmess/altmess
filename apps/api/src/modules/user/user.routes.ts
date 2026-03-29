@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import {
 	deleteUserScheme,
 	getMeScheme,
+	searchUsersSchema,
 	getUserByIdSchema,
 	updateUserScheme
 } from "./user.schemas.js";
@@ -22,6 +23,22 @@ export async function userRoutes(fastify: FastifyInstance) {
 				}
 
 				return reply.send(user);
+			} catch (error: any) {
+				fastify.log.error(error);
+				return reply.code(500).send({ error: "Internal server error" });
+			}
+		}
+	});
+
+	fastify.get("/search", {
+		schema: searchUsersSchema,
+		onRequest: [fastify.authenticate],
+		handler: async (request, reply) => {
+			try {
+				const { username } = request.query as { username: string };
+				const users = await userService.searchUsersByUsername(request.user.id, username);
+
+				return reply.send(users);
 			} catch (error: any) {
 				fastify.log.error(error);
 				return reply.code(500).send({ error: "Internal server error" });

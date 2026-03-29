@@ -20,10 +20,11 @@ export async function chatRoutes(fastify: FastifyInstance) {
 					new Set([...(users ? users : []), request.user.id])
 				);
 
-				const chat = await chatService.createChat(title, usersArrayWithCurrentUser);
+				const chat = await chatService.createChat(title, usersArrayWithCurrentUser, request.user.id);
 				return reply.send(chat);
-			} catch (error) {
+			} catch (error: any) {
 				fastify.log.error(error);
+				
 				return reply.code(500).send({ error: "Internal server error" });
 			}
 		}
@@ -60,7 +61,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 				socket.on("error", () => {
 					webSocketService.unregister(userId);
 				});
-			} catch (error) {
+			} catch (error: any) {
 				fastify.log.error(error);
 				socket.send(JSON.stringify({ error: "Internal server error" }));
 				socket.close();
@@ -78,7 +79,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
 				await chatService.deleteChat(id, userId);
 				return reply.send({ message: "Chat deleted successfully" });
-			} catch (error) {
+			} catch (error: any) {
 				fastify.log.error(error);
 				if (error.message === "Chat not found") {
 					return reply.code(404).send({ error: "Chat not found" });
@@ -106,7 +107,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
 				const chat = await chatService.updateChat(id, title, usersArrayWithCurrentUser, userId);
 				return reply.send(chat);
-			} catch (error) {
+			} catch (error: any) {
 				fastify.log.error(error);
 				if (error.message === "Chat not found") {
 					return reply.code(404).send({ error: "Chat not found" });

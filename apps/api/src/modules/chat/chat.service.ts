@@ -4,10 +4,11 @@ import { webSocketService } from "../../shared/webSocketService.js";
 export class ChatService {
 	constructor(private prisma: PrismaClient) {}
 
-	async createChat(title: string, userIds: number[], currentUserId?: number) {
+	async createChat(title: string, userIds: number[], currentUserId: number) {
 		const chat = await this.prisma.chat.create({
 			data: {
 				title,
+				chatCreatorId: currentUserId,
 				users: {
 					connect: userIds.map((id) => ({ id }))
 				}
@@ -15,6 +16,7 @@ export class ChatService {
 			select: {
 				id: true,
 				title: true,
+				chatCreatorId: true,
 				users: {
 					select: {
 						id: true
@@ -46,6 +48,7 @@ export class ChatService {
 			select: {
 				id: true,
 				title: true,
+				chatCreatorId: true,
 				users: {
 					select: {
 						id: true

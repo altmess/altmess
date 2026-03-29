@@ -9,9 +9,14 @@ export default fp(async function (fastify: FastifyInstance) {
 
 	fastify.decorate("authenticate", async function (request: any, reply: any) {
 		try {
-			await request.jwtVerify();
-		} catch (err) {
-			reply.send(err);
+			const data = await request.jwtVerify();
+
+			request.user = data;
+		} catch (err: any) {
+			return reply.code(401).send({
+				error: "Unauthorized",
+				message: err.message || "Invalid or expired token"
+			});
 		}
 	});
 });

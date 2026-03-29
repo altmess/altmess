@@ -1,3 +1,9 @@
+const userResponseProperties = {
+	id: { type: "number" },
+	username: { type: "string" },
+	name: { type: ["string", "null"] }
+};
+
 export const getUserByIdSchema = {
 	params: {
 		type: "object",
@@ -9,11 +15,7 @@ export const getUserByIdSchema = {
 	response: {
 		200: {
 			type: "object",
-			properties: {
-				id: { type: "number" },
-				username: { type: "string" },
-				name: { type: "string" }
-			}
+			properties: userResponseProperties
 		},
 		404: {
 			type: "object",
@@ -34,11 +36,7 @@ export const getMeScheme = {
 	response: {
 		200: {
 			type: "object",
-			properties: {
-				id: { type: "number" },
-				username: { type: "string" },
-				name: { type: "string" }
-			}
+			properties: userResponseProperties
 		},
 		404: {
 			type: "object",
@@ -72,6 +70,31 @@ export const deleteUserScheme = {
 	}
 };
 
+export const searchUsersSchema = {
+	querystring: {
+		type: "object",
+		required: ["username"],
+		properties: {
+			username: { type: "string", minLength: 2, maxLength: 30 }
+		}
+	},
+	response: {
+		200: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: userResponseProperties
+			}
+		},
+		500: {
+			type: "object",
+			properties: {
+				error: { type: "string" }
+			}
+		}
+	}
+};
+
 export const updateUserScheme = {
 	body: {
 		type: "object",
@@ -83,11 +106,7 @@ export const updateUserScheme = {
 	response: {
 		200: {
 			type: "object",
-			properties: {
-				id: { type: "number" },
-				username: { type: "string" },
-				name: { type: "string" }
-			}
+			properties: userResponseProperties
 		},
 		404: {
 			type: "object",

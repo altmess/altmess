@@ -12,16 +12,19 @@ model User {
   password String
   name     String?
   createdAt DateTime @default(now())
-  chats    Chat[]
+  chats    Chat[] @relation("ChatUsers")
   messages Message[]
   contacts Contact[] @relation("UserContacts")
   contactOf Contact[] @relation("ContactUser")
+  createdChats Chat[] @relation("ChatCreator")
 }
 
 model Chat {
   id    Int     @id @default(autoincrement())
   title String
-  users User[]
+  chatCreator User    @relation("ChatCreator", fields: [chatCreatorId], references: [id])
+  chatCreatorId Int
+  users User[] @relation("ChatUsers")
   messages Message[]
 }
 

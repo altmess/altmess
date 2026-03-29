@@ -16,6 +16,7 @@ export const createChatScheme = {
 			properties: {
 				id: { type: "number" },
 				title: { type: "string" },
+				chatCreatorId: { type: "number" },
 				users: {
 					type: "array",
 					items: { type: "object", properties: { id: { type: "number" } } }
@@ -97,6 +98,7 @@ export const updateChatScheme = {
 			properties: {
 				id: { type: "number" },
 				title: { type: "string" },
+				chatCreatorId: { type: "number" },
 				users: {
 					type: "array",
 					items: { type: "object", properties: { id: { type: "number" } } }
