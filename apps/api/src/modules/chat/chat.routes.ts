@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { createChatScheme, deleteChatScheme, updateChatScheme } from "./chat.schemas.js";
 import { ChatService } from "./chat.service.js";
 import { webSocketService } from "../../shared/webSocketService.js";
+import { randomUUID } from "crypto";
 
 export async function chatRoutes(fastify: FastifyInstance) {
 	const chatService = new ChatService(fastify.prisma);
@@ -24,7 +25,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 				return reply.send(chat);
 			} catch (error: any) {
 				fastify.log.error(error);
-				
+
 				return reply.code(500).send({ error: "Internal server error" });
 			}
 		}
@@ -36,30 +37,67 @@ export async function chatRoutes(fastify: FastifyInstance) {
 			onRequest: [fastify.authenticate],
 			websocket: true
 		},
-		async (socket, req) => {
+		async (socket, request) => {
 			try {
-				const userId = req.user!.id;
+				const userId = request.user!.id;
+				const socketId = randomUUID();
 
-				webSocketService.register(userId, socket);
+				// Регистрируем сокет
+				webSocketService.register(userId, socket, socketId);
 
+				// Подписываем на все чаты пользователя
 				const chats = await chatService.getUserChats(userId);
+				for (const chat of chats) {
+					webSocketService.joinChatRoom(chat.id, userId, socketId);
+				}
+
+				// Отправляем текущий список чатов
 				socket.send(JSON.stringify({ type: "chats:list", payload: chats }));
 
+				// Обработчик входящих сообщений
 				socket.on("message", async (message) => {
-					const parsedMessage = JSON.parse(String(message));
+					try {
+						const parsedMessage = JSON.parse(String(message));
 
-					if (parsedMessage.type === "chats:list") {
-						const chats = await chatService.getUserChats(userId);
-						socket.send(JSON.stringify({ type: "chats:list", payload: chats }));
+						switch (parsedMessage.type) {
+							case "chats:list": {
+								const chats = await chatService.getUserChats(userId);
+								socket.send(JSON.stringify({ type: "chats:list", payload: chats }));
+								break;
+							}
+
+							case "chat:join": {
+								const chatId = Number(parsedMessage.chatId);
+								if (chatId) {
+									webSocketService.joinChatRoom(chatId, userId, socketId);
+									const messages = await chatService.getChatMessages(chatId);
+									socket.send(
+										JSON.stringify({ type: "messages:list", payload: messages })
+									);
+								}
+								break;
+							}
+
+							case "chat:leave": {
+								const chatId = Number(parsedMessage.chatId);
+								if (chatId) {
+									webSocketService.leaveChatRoom(chatId, socketId);
+								}
+								break;
+							}
+						}
+					} catch (error) {
+						fastify.log.error({ error }, "Error handling WebSocket message");
 					}
 				});
 
 				socket.on("close", () => {
-					webSocketService.unregister(userId);
+					webSocketService.unregister(userId, socketId);
 				});
 
-				socket.on("error", () => {
-					webSocketService.unregister(userId);
+				socket.on("error", (error) => {
+					fastify.log.error({ error }, "WebSocket error");
+					webSocketService.unregister(userId, socketId);
 				});
 			} catch (error: any) {
 				fastify.log.error(error);

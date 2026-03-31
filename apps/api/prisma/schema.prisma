@@ -17,6 +17,7 @@ model User {
   contacts Contact[] @relation("UserContacts")
   contactOf Contact[] @relation("ContactUser")
   createdChats Chat[] @relation("ChatCreator")
+
 }
 
 model Chat {
@@ -26,6 +27,7 @@ model Chat {
   chatCreatorId Int
   users User[] @relation("ChatUsers")
   messages Message[]
+  createdAt DateTime @default(now())
 }
 
 model Message {
@@ -35,6 +37,7 @@ model Message {
   chatId  Int
   sender  User    @relation(fields: [senderId], references: [id])
   senderId Int
+  createdAt DateTime @default(now())
 }
 
 model Contact {

@@ -25,7 +25,7 @@ export class ChatService {
 			}
 		});
 
-		const allChatsOfUser = await this.getUserChats(currentUserId!);
+		const allChatsOfUser = await this.getUserChats(currentUserId);
 
 		// Отправляем событие всем участникам чата
 		webSocketService.broadcast(userIds, {
@@ -59,6 +59,24 @@ export class ChatService {
 		return chats;
 	}
 
+	async getChatMessages(chatId: number) {
+		const messages = await this.prisma.message.findMany({
+			where: { chatId },
+			include: {
+				sender: {
+					select: {
+						id: true,
+						name: true
+					}
+				}
+			},
+			orderBy: {
+				createdAt: "asc"
+			}
+		});
+		return messages;
+	}
+
 	async deleteChat(chatId: string, userId: number) {
 		const chat = await this.prisma.chat.findUnique({
 			where: { id: parseInt(chatId) },
@@ -71,22 +89,31 @@ export class ChatService {
 
 		const isUserInChat = chat.users.some((user) => user.id === userId);
 		if (!isUserInChat) {
-			throw new Error("Forbidden");
+			throw new Error("Unauthorized");
 		}
+
+		const userIds = chat.users.map((user) => user.id);
 
 		await this.prisma.chat.delete({
 			where: { id: parseInt(chatId) }
 		});
 
-		const allChatsOfUser = await this.getUserChats(userId);
+		// Broadcast в комнату чата перед удалением
+		webSocketService.broadcastToChat(parseInt(chatId), {
+			type: "chat:deleted",
+			payload: { chatId: parseInt(chatId) }
+		});
 
-		webSocketService.broadcast(
-			chat.users.map((user) => user.id),
-			{
-				type: "chat:deleted",
-				payload: allChatsOfUser
-			}
-		);
+		// Отправляем обновлённый список чатов всем участникам
+		for (const uid of userIds) {
+			const chats = await this.getUserChats(uid);
+			webSocketService.send(uid, {
+				type: "chats:list",
+				payload: chats
+			});
+		}
+
+		return chat;
 	}
 
 	async updateChat(chatId: string, title: string, userIds: number[], userId: number) {
@@ -101,12 +128,19 @@ export class ChatService {
 
 		const isUserInChat = chat.users.some((user) => user.id === userId);
 		if (!isUserInChat) {
-			throw new Error("Forbidden");
+			throw new Error("Unauthorized");
 		}
+
+		const oldUserIds = chat.users.map((user) => user.id);
 
 		const updatedChat = await this.prisma.chat.update({
 			where: { id: parseInt(chatId) },
-			data: { title, users: { set: userIds.map((id) => ({ id })) } },
+			data: {
+				title,
+				users: {
+					set: userIds.map((id) => ({ id }))
+				}
+			},
 			include: {
 				users: {
 					select: {
@@ -116,15 +150,43 @@ export class ChatService {
 			}
 		});
 
-		const allChatsOfUser = await this.getUserChats(userId);
+		// Определяем кто был добавлен или удалён
+		const addedUserIds = userIds.filter((id) => !oldUserIds.includes(id));
+		const removedUserIds = oldUserIds.filter((id) => !userIds.includes(id));
 
-		webSocketService.broadcast(
-			chat.users.map((user) => user.id),
-			{
+		// Уведомляем старых участников об обновлении
+		const remainingUserIds = userIds.filter((id) => oldUserIds.includes(id));
+		for (const uid of remainingUserIds) {
+			const chats = await this.getUserChats(uid);
+			webSocketService.send(uid, {
 				type: "chat:updated",
-				payload: allChatsOfUser
-			}
-		);
+				payload: chats
+			});
+		}
+
+		// Уведомляем новых участников
+		for (const uid of addedUserIds) {
+			const chats = await this.getUserChats(uid);
+			webSocketService.send(uid, {
+				type: "chat:created",
+				payload: chats
+			});
+		}
+
+		// Уведомляем удалённых участников
+		for (const uid of removedUserIds) {
+			const chats = await this.getUserChats(uid);
+			webSocketService.send(uid, {
+				type: "chat:removed",
+				payload: { chatId: parseInt(chatId), chats }
+			});
+		}
+
+		// Broadcast в комнату чата
+		webSocketService.broadcastToChat(parseInt(chatId), {
+			type: "chat:updated",
+			payload: updatedChat
+		});
 
 		return updatedChat;
 	}

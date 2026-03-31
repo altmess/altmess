@@ -1,5 +1,6 @@
 import fastify from "fastify";
 import app, { prisma } from "./app.js";
+import { webSocketService } from "./shared/webSocketService.js";
 
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -12,7 +13,12 @@ const server = fastify({
 
 server.register(app);
 
+// Инициализируем heartbeat для WebSocket
+webSocketService.initHeartbeat(30000);
+
 server.addHook("onClose", async () => {
+	// Graceful shutdown для WebSocket
+	webSocketService.cleanup();
 	await prisma.$disconnect();
 });
 
